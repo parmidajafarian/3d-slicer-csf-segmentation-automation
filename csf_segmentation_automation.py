@@ -28,7 +28,6 @@ shrunkSegment.SetName(shrunkSegmentName)
 
 # Set up Segment Editor to subtract shrunk Brain from CSF shell
 slicer.app.processEvents()
-
 segmentEditorWidget = slicer.qMRMLSegmentEditorWidget()
 segmentEditorWidget.setMRMLScene(slicer.mrmlScene)
 segmentEditorNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLSegmentEditorNode")
@@ -67,7 +66,6 @@ effect.self().onApply()
 
 # Clean up temporary nodes
 segmentation.RemoveSegment(shrunkSegmentId)
-
 slicer.mrmlScene.RemoveNode(segmentEditorNode)
 
 print("CSF shell created successfully!")
