@@ -40,6 +40,7 @@ effect = segmentEditorWidget.activeEffect()
 segmentEditorNode.SetSelectedSegmentID(shrunkSegmentId)
 effect.setParameter("ApplyToAllVisibleSegments", 0)
 effect.setParameter("MarginSizeMm", marginMm)  # Amount to shrink
+segmentEditorNode.SetOverwriteMode(segmentEditorNode.OverwriteNone)
 effect.self().onApply()
 
 # Create CSF Shell Segment as a copy of original Brain
