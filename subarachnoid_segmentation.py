@@ -66,7 +66,6 @@ def create_csf_shell(segmentation_name="MRHead mask",
     effect.self().onApply()
     
     # Cleanup
-    segmentation.RemoveSegment(shrunkId)
     slicer.mrmlScene.RemoveNode(editorNode)
     
     print("CSF shell created successfully!")
