@@ -2,7 +2,7 @@ import slicer
 import vtk
 import vtkITK
 
-def create_csf_shell(segmentation_name="MRHead mask", 
+def create_csf_shell(segmentation_name="HD_BET_Segmentation", 
                      brain_segment="Brain",
                      csf_name="CSF Segment",
                      margin_mm=-3):
@@ -38,9 +38,9 @@ def create_csf_shell(segmentation_name="MRHead mask",
     # Shrink Brain Segment
     segmentEditorWidget.setActiveEffectByName("Margin")
     effect = segmentEditorWidget.activeEffect()
-    segmentEditorNode.SetSelectedSegmentID(shrunkSegmentId)
+    segmentEditorNode.SetSelectedSegmentID(shrunkId)
     effect.setParameter("ApplyToAllVisibleSegments", 0)
-    effect.setParameter("MarginSizeMm", marginMm)  # Amount to shrink
+    effect.setParameter("MarginSizeMm", margin_mm)  # Amount to shrink
     segmentEditorNode.SetOverwriteMode(segmentEditorNode.OverwriteNone)
     effect.self().onApply()
     
@@ -50,7 +50,7 @@ def create_csf_shell(segmentation_name="MRHead mask",
     newIds = set(segmentation.GetSegmentIDs())
     csfSegmentId = list(newIds - existingIds)[0]  # The new segment ID
     csfSegment = segmentation.GetSegment(csfSegmentId)
-    csfSegment.SetName(csfSegmentName)
+    csfSegment.SetName(csf_name)
     segmentation.GetSegment(csfSegmentId).SetColor(88/255, 106/255, 215/255) # Optional
 
     # Activate Logical Operators effect
@@ -59,17 +59,45 @@ def create_csf_shell(segmentation_name="MRHead mask",
 
     # Set the destination segment in the editor node
     segmentEditorNode.SetSelectedSegmentID(csfSegmentId)
-    effect.setParameter("ModifierSegmentID", shrunkSegmentId)
+    effect.setParameter("ModifierSegmentID", shrunkId)
     effect.setParameter("Operation", "SUBTRACT")
         
     # Apply subtraction (CSF shell = original Brain - shrunk Brain)
     effect.self().onApply()
     
-    # Cleanup
-    slicer.mrmlScene.RemoveNode(editorNode)
+    # Clean up: remove shrunk segment and segment editor node
+    slicer.mrmlScene.RemoveNode(segmentEditorNode)
+    segmentation.RemoveSegment(shrunkId)
     
     print("CSF shell created successfully!")
-    return csfId
+    return csfSegmentId
 
 if __name__ == "__main__":
     create_csf_shell()
+
+import slicer
+
+def merge_segmentations(
+    source_name="HD_BET_Segmentation",
+    target_name="SynthSeg_Segmentation"
+):
+    source_node = slicer.util.getNode(source_name)
+    target_node = slicer.util.getNode(target_name)
+
+    source_seg = source_node.GetSegmentation()
+    target_seg = target_node.GetSegmentation()
+
+    # copy every segment from source -> target
+    segment_ids = source_seg.GetSegmentIDs()
+
+    for seg_id in segment_ids:
+        target_seg.CopySegmentFromSegmentation(
+            source_seg,
+            seg_id
+        )
+
+    print(f"Merged {len(segment_ids)} segments into {target_name}")
+    return target_node
+
+if __name__ == "__main__":
+    merge_segmentations()

@@ -1,8 +1,8 @@
 import slicer
 import HDBrainExtractionTool
 
-def main():
-    inputVolume = slicer.util.getNode("MRBrainTumor1")
+def run_hd_bet(mri_image, segmentation_name):
+    inputVolume = slicer.util.getNode(mri_image)
 
     logic = HDBrainExtractionTool.HDBrainExtractionToolLogic()
 
@@ -11,11 +11,18 @@ def main():
     )
 
     brainSeg = slicer.mrmlScene.AddNewNodeByClass(
-        "vtkMRMLSegmentationNode", "HD_BET_Segmentation"
+        "vtkMRMLSegmentationNode", segmentation_name
     )
 
     logic.setupPythonRequirements()
     logic.process(inputVolume, brainVolume, brainSeg, 0)
 
+    # Rename segment
+    segmentation = brainSeg.GetSegmentation()
+    segment_id = segmentation.GetNthSegmentID(0)
+    segmentation.GetSegment(segment_id).SetName("Brain")
+
+    return brainSeg, brainVolume
+
 if __name__ == "__main__":
-    main()
+    run_hd_bet("MRHead", "HD_BET_Segmentation")

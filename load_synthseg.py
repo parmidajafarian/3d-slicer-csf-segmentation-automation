@@ -1,9 +1,6 @@
 import slicer
 
 def load_and_filter_synthseg(seg_path, keep_labels=None, output_name="SynthSeg_Segmentation"):
-    """
-    Load SynthSeg NIfTI, filter labels, rename segments
-    """
     if keep_labels is None:
         keep_labels = {4, 5, 14, 15, 43, 44}  # Ventricle labels only
     
