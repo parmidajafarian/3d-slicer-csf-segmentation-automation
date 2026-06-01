@@ -25,7 +25,7 @@ def main():
     # 2. HD-BET (brain extraction from MRI volume in scene)
     brainSeg, brainVolume = run_hd_bet(mri_image, segmentation_name)
 
-    # 3. CSF shell from SynthSeg brain mask
+    # 3. CSF shell from HD-BET brain segmentation
     csf_node = create_csf_shell(segmentation_name=segmentation_name,
                      brain_segment=segment_name,
                      csf_name=csf_name,
