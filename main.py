@@ -8,6 +8,8 @@ if project_path not in sys.path:
 from load_synthseg import load_and_filter_synthseg
 from hd_bet_pipeline import run_hd_bet
 from subarachnoid_segmentation import create_csf_shell
+from segmentation_utils import merge_ventricles, smooth_ventricles
+
 
 def main():
     mri_image = "MRHead"                         # Name of the MRI volume in the scene
@@ -31,6 +33,50 @@ def main():
                      csf_name=csf_name,
                      margin_mm=margin_mm)
     
+    print("Starting ventricle processing...")
+
+    # LEFT
+    merge_ventricles(
+        segmentation_name="SynthSeg_Segmentation",
+        segment_a="Left_Lateral_Ventricle",
+        segment_b="Left_Inferior_Lateral_Ventricle",
+        output_name="Left_Ventricle_Merged"
+    )
+
+    smooth_ventricles(
+        segmentation_name="SynthSeg_Segmentation",
+        segment_name="Left_Ventricle_Merged",
+        smoothing_kernel_mm=10
+    )
+
+    # RIGHT
+    merge_ventricles(
+        segmentation_name="SynthSeg_Segmentation",
+        segment_a="Right_Lateral_Ventricle",
+        segment_b="Right_Inferior_Lateral_Ventricle",
+        output_name="Right_Ventricle_Merged"
+    )
+
+    smooth_ventricles(
+        segmentation_name="SynthSeg_Segmentation",
+        segment_name="Right_Ventricle_Merged",
+        smoothing_kernel_mm=10
+    )
+
+    # MIDLINE
+    merge_ventricles(
+        segmentation_name="SynthSeg_Segmentation",
+        segment_a="Third_Ventricle",
+        segment_b="Fourth_Ventricle",
+        output_name="Third_Fourth_Ventricle_Merged"
+    )
+
+    smooth_ventricles(
+        segmentation_name="SynthSeg_Segmentation",
+        segment_name="Third_Fourth_Ventricle_Merged",
+        smoothing_kernel_mm=10
+    )
+
     print("Pipeline complete.")
 
 if __name__ == "__main__":
