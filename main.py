@@ -8,14 +8,14 @@ if project_path not in sys.path:
 from load_synthseg import load_and_filter_synthseg
 from hd_bet_pipeline import run_hd_bet
 from subarachnoid_segmentation import create_csf_shell
-from segmentation_utils import merge_ventricles, smooth_ventricles, keep_largest_island, merge_segments_into_new
+from segmentation_utils import merge_segmentations, merge_ventricles, smooth_ventricles, keep_largest_island, merge_segments_into_new, keep_only_segments
 
 
 def main():
     mri_image = "MRHead"                         # Name of the MRI volume in the scene
     segmentation_name = "HD_BET_Segmentation"    # Name of your segmentation node
     segment_name = "Brain"                       # Segment to shrink      
-    csf_name = "CSF Segment"                     # Name of the final CSF shell segment
+    csf_name = "Subarachnoid Segment"            # Name of the final subarachnoid segment
     margin_mm = -3                               # Shrink amount in millimeters
     seg_path = "/Users/parmidajafarian/Downloads/Education/UoA/Extracurriculars/Animus/MRHead_synthseg.nii.gz"  # Path to SynthSeg output
 
@@ -88,6 +88,20 @@ def main():
         "Third_Fourth_Ventricle_Merged"
     ],
     output_name="All_Ventricles_Merged"
+    )
+
+    merge_segmentations(
+    source_name="HD_BET_Segmentation",
+    target_name="SynthSeg_Segmentation"
+    )
+
+    keep_only_segments(
+    "SynthSeg_Segmentation",
+    ["Subarachnoid Segment", "All_Ventricles_Merged"]
+    )
+
+    slicer.mrmlScene.RemoveNode(
+    slicer.util.getNode("HD_BET_Brain")
     )
 
     print("Pipeline complete.")

@@ -234,3 +234,20 @@ if __name__ == "__main__":
     ],
     output_name="All_Ventricles_Merged"
     )
+
+
+def keep_only_segments(segmentation_name, segments_to_keep):
+
+    segNode = slicer.util.getNode(segmentation_name)
+    segmentation = segNode.GetSegmentation()
+
+    # make a copy because we're deleting while iterating
+    segment_ids = list(segmentation.GetSegmentIDs())
+
+    for seg_id in segment_ids:
+        segment_name = segmentation.GetSegment(seg_id).GetName()
+
+        if segment_name not in segments_to_keep:
+            segmentation.RemoveSegment(seg_id)
+
+    print(f"Kept segments: {segments_to_keep}")

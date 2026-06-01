@@ -4,7 +4,7 @@ import vtkITK
 
 def create_csf_shell(segmentation_name="HD_BET_Segmentation", 
                      brain_segment="Brain",
-                     csf_name="CSF Segment",
+                     csf_name="Subarachnoid Segment",
                      margin_mm=-3):
 
     # Get segmentation node
