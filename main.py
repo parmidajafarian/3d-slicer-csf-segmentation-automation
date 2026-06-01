@@ -5,6 +5,7 @@ project_path = "/Users/parmidajafarian/Downloads/Education/UoA/Extracurriculars/
 if project_path not in sys.path:
     sys.path.append(project_path)
 
+from synthseg_runner import run_synthseg
 from load_synthseg import load_and_filter_synthseg
 from hd_bet_pipeline import run_hd_bet
 from subarachnoid_segmentation import create_csf_shell
@@ -17,12 +18,16 @@ def main():
     segment_name = "Brain"                       # Segment to shrink      
     csf_name = "Subarachnoid Segment"            # Name of the final subarachnoid segment
     margin_mm = -3                               # Shrink amount in millimeters
-    seg_path = "/Users/parmidajafarian/Downloads/Education/UoA/Extracurriculars/Animus/MRHead_synthseg.nii.gz"  # Path to SynthSeg output
+    input_path = "/Users/parmidajafarian/Downloads/Education/UoA/Extracurriculars/Animus/MRHead_stripped.nii.gz"
+    output_path = "/Users/parmidajafarian/Downloads/Education/UoA/Extracurriculars/Animus/MRHead_synthseg.nii.gz"  # Path to SynthSeg output
+    synthseg_cmd = "/Applications/freesurfer/8.1.0/bin/mri_synthseg"
 
     print("Starting full segmentation pipeline...")
 
+    run_synthseg(input_path, output_path, synthseg_cmd)
+
     # 1. Load SynthSeg
-    synthseg_node = load_and_filter_synthseg(seg_path)
+    synthseg_node = load_and_filter_synthseg(output_path)
 
     # 2. HD-BET (brain extraction from MRI volume in scene)
     brainSeg, brainVolume = run_hd_bet(mri_image, segmentation_name)
