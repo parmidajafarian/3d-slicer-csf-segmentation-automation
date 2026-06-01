@@ -8,7 +8,7 @@ if project_path not in sys.path:
 from load_synthseg import load_and_filter_synthseg
 from hd_bet_pipeline import run_hd_bet
 from subarachnoid_segmentation import create_csf_shell
-from segmentation_utils import merge_ventricles, smooth_ventricles
+from segmentation_utils import merge_ventricles, smooth_ventricles, keep_largest_island, merge_segments_into_new
 
 
 def main():
@@ -75,6 +75,19 @@ def main():
         segmentation_name="SynthSeg_Segmentation",
         segment_name="Third_Fourth_Ventricle_Merged",
         smoothing_kernel_mm=10
+    )
+
+    keep_largest_island("SynthSeg_Segmentation", "Left_Ventricle_Merged")
+    keep_largest_island("SynthSeg_Segmentation", "Right_Ventricle_Merged")
+
+    merge_segments_into_new(
+    segmentation_name="SynthSeg_Segmentation",
+    input_segments=[
+        "Left_Ventricle_Merged",
+        "Right_Ventricle_Merged",
+        "Third_Fourth_Ventricle_Merged"
+    ],
+    output_name="All_Ventricles_Merged"
     )
 
     print("Pipeline complete.")

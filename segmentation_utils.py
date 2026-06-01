@@ -90,7 +90,7 @@ def merge_ventricles(
 
     print(f"Merged {segment_a} + {segment_b} → {output_name}")
 
-    return merged_id
+    return merged_id, id_a, id_b
 
 if __name__ == "__main__":
     merge_ventricles()
@@ -138,3 +138,99 @@ def smooth_ventricles(
 
 if __name__ == "__main__":
     smooth_ventricles()
+
+
+def keep_largest_island(segmentation_name, segment_name):
+
+    segNode = slicer.util.getNode(segmentation_name)
+
+    segment_id = None
+    segmentation = segNode.GetSegmentation()
+
+    for sid in segmentation.GetSegmentIDs():
+        if segmentation.GetSegment(sid).GetName() == segment_name:
+            segment_id = sid
+            break
+
+    if segment_id is None:
+        raise ValueError(f"Segment '{segment_name}' not found")
+
+    segmentEditorNode = slicer.mrmlScene.AddNewNodeByClass(
+        "vtkMRMLSegmentEditorNode"
+    )
+
+    segmentEditorWidget = slicer.qMRMLSegmentEditorWidget()
+    segmentEditorWidget.setMRMLScene(slicer.mrmlScene)
+    segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)
+    segmentEditorWidget.setSegmentationNode(segNode)
+
+    segmentEditorNode.SetSelectedSegmentID(segment_id)
+
+    segmentEditorWidget.setActiveEffectByName("Islands")
+    effect = segmentEditorWidget.activeEffect()
+
+    effect.setParameter("Operation", "KEEP_LARGEST_ISLAND")
+    effect.self().onApply()
+
+    slicer.mrmlScene.RemoveNode(segmentEditorNode)
+
+    print(f"Kept largest island for {segment_name}")
+
+
+def merge_segments_into_new(
+    segmentation_name,
+    input_segments,
+    output_name
+):
+    segNode = slicer.util.getNode(segmentation_name)
+    segmentation = segNode.GetSegmentation()
+
+    # get IDs for all input segments
+    segment_ids = []
+    for name in input_segments:
+        seg_id = find_segment_id_by_name(segmentation, name)
+        if not seg_id:
+            raise ValueError(f"Segment '{name}' not found")
+        segment_ids.append(seg_id)
+
+    # create empty output segment
+    output_id = segmentation.AddEmptySegment(output_name)
+    segmentation.GetSegment(output_id).SetName(output_name)
+
+    # setup segment editor once
+    segmentEditorWidget = slicer.qMRMLSegmentEditorWidget()
+    segmentEditorWidget.setMRMLScene(slicer.mrmlScene)
+
+    segmentEditorNode = slicer.mrmlScene.AddNewNodeByClass(
+        "vtkMRMLSegmentEditorNode"
+    )
+
+    segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)
+    segmentEditorWidget.setSegmentationNode(segNode)
+
+    segmentEditorWidget.setActiveEffectByName("Logical operators")
+    effect = segmentEditorWidget.activeEffect()
+
+    segmentEditorNode.SetSelectedSegmentID(output_id)
+
+    # UNION everything into the empty segment
+    for seg_id in segment_ids:
+        effect.setParameter("ModifierSegmentID", seg_id)
+        effect.setParameter("Operation", "UNION")
+        effect.self().onApply()
+
+    slicer.mrmlScene.RemoveNode(segmentEditorNode)
+
+    print(f"Merged {len(segment_ids)} segments → {output_name}")
+    return output_id
+
+if __name__ == "__main__":
+    merge_segments_into_new(
+    segmentation_name="SynthSeg_Segmentation",
+    input_segments=[
+        "Left_Ventricle_Merged",
+        "Right_Ventricle_Merged",
+        "Third_Fourth_Ventricle_Merged"
+    ],
+    output_name="All_Ventricles_Merged"
+    )
