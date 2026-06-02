@@ -1,3 +1,4 @@
+from pathlib import Path
 import sys
 
 project_path = "/Users/parmidajafarian/Downloads/Education/UoA/Extracurriculars/Animus/3d-slicer-csf-segmentation-automation"
@@ -5,12 +6,12 @@ project_path = "/Users/parmidajafarian/Downloads/Education/UoA/Extracurriculars/
 if project_path not in sys.path:
     sys.path.append(project_path)
 
-from synthseg_runner import run_synthseg
-from load_synthseg import load_and_filter_synthseg
-from hd_bet_pipeline import run_hd_bet
-from subarachnoid_segmentation import create_csf_shell
-from segmentation_utils import merge_segmentations, merge_ventricles, smooth_ventricles, keep_largest_island, merge_segments_into_new, keep_only_segments
-
+import slicer
+from pipeline.synthseg import run_synthseg, load_and_filter_synthseg
+from pipeline.hd_bet import run_hd_bet
+from pipeline.subarachnoid import create_subarachnoid_shell
+from pipeline.ventricles import process_ventricles
+from segmentation_utils import merge_segmentations, keep_only_segments
 
 def main():
     mri_image = "MRHead"                         # Name of the MRI volume in the scene
@@ -23,83 +24,35 @@ def main():
     synthseg_cmd = "/Applications/freesurfer/8.1.0/bin/mri_synthseg"
 
     print("Starting full segmentation pipeline...")
+    
+    # 1. Run SynthSeg (if needed)
+    if not Path(input_path).exists():
+        run_synthseg(input_path, output_path, synthseg_cmd)
 
-    run_synthseg(input_path, output_path, synthseg_cmd)
-
-    # 1. Load SynthSeg
+    # 1. # 2. Load and filter SynthSeg segmentation
     synthseg_node = load_and_filter_synthseg(output_path)
 
-    # 2. HD-BET (brain extraction from MRI volume in scene)
+    # 3. Run HD-BET brain extraction
     brainSeg, brainVolume = run_hd_bet(mri_image, segmentation_name)
 
-    # 3. CSF shell from HD-BET brain segmentation
-    csf_node = create_csf_shell(segmentation_name=segmentation_name,
+    # 4. Create subarachnoid CSF shell from HD-BET brain segmentation
+    csf_node = create_subarachnoid_shell(segmentation_name=segmentation_name,
                      brain_segment=segment_name,
                      csf_name=csf_name,
                      margin_mm=margin_mm)
     
+    # 5. Process ventricles from SynthSeg
     print("Starting ventricle processing...")
+    process_ventricles()
 
-    # LEFT
-    merge_ventricles(
-        segmentation_name="SynthSeg_Segmentation",
-        segment_a="Left_Lateral_Ventricle",
-        segment_b="Left_Inferior_Lateral_Ventricle",
-        output_name="Left_Ventricle_Merged"
-    )
-
-    smooth_ventricles(
-        segmentation_name="SynthSeg_Segmentation",
-        segment_name="Left_Ventricle_Merged",
-        smoothing_kernel_mm=10
-    )
-
-    # RIGHT
-    merge_ventricles(
-        segmentation_name="SynthSeg_Segmentation",
-        segment_a="Right_Lateral_Ventricle",
-        segment_b="Right_Inferior_Lateral_Ventricle",
-        output_name="Right_Ventricle_Merged"
-    )
-
-    smooth_ventricles(
-        segmentation_name="SynthSeg_Segmentation",
-        segment_name="Right_Ventricle_Merged",
-        smoothing_kernel_mm=10
-    )
-
-    # MIDLINE
-    merge_ventricles(
-        segmentation_name="SynthSeg_Segmentation",
-        segment_a="Third_Ventricle",
-        segment_b="Fourth_Ventricle",
-        output_name="Third_Fourth_Ventricle_Merged"
-    )
-
-    smooth_ventricles(
-        segmentation_name="SynthSeg_Segmentation",
-        segment_name="Third_Fourth_Ventricle_Merged",
-        smoothing_kernel_mm=10
-    )
-
-    keep_largest_island("SynthSeg_Segmentation", "Left_Ventricle_Merged")
-    keep_largest_island("SynthSeg_Segmentation", "Right_Ventricle_Merged")
-
-    merge_segments_into_new(
-    segmentation_name="SynthSeg_Segmentation",
-    input_segments=[
-        "Left_Ventricle_Merged",
-        "Right_Ventricle_Merged",
-        "Third_Fourth_Ventricle_Merged"
-    ],
-    output_name="All_Ventricles_Merged"
-    )
-
+    # 6. Merge HD-BET and SynthSeg segmentations
+    print("\nMerging segmentations...")
     merge_segmentations(
     source_name="HD_BET_Segmentation",
     target_name="SynthSeg_Segmentation"
     )
 
+    # 7. Keep only required segments (subarachnoid and ventricles)
     keep_only_segments(
     "SynthSeg_Segmentation",
     ["Subarachnoid Segment", "All_Ventricles_Merged"]

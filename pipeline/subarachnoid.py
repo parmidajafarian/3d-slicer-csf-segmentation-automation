@@ -2,7 +2,7 @@ import slicer
 import vtk
 import vtkITK
 
-def create_csf_shell(segmentation_name="HD_BET_Segmentation", 
+def create_subarachnoid_shell(segmentation_name="HD_BET_Segmentation", 
                      brain_segment="Brain",
                      csf_name="Subarachnoid Segment",
                      margin_mm=-3):
@@ -73,4 +73,4 @@ def create_csf_shell(segmentation_name="HD_BET_Segmentation",
     return csfSegmentId
 
 if __name__ == "__main__":
-    create_csf_shell()
+    create_subarachnoid_shell()
